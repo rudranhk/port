@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="referrer" content="strict-origin-when-cross-origin"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self';"/>
+<title>Spotlight — Rudra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #000; overflow: hidden; }
+  body { font-family: 'Inter', sans-serif; }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+    cursor: none;
+    perspective: 1200px;
+  }
+
+  /* ---- Parallax layers (each oversized so panning never shows an edge) ---- */
+  .parallax {
+    position: absolute;
+    inset: -15%;
+    will-change: transform;
+  }
+
+  .layer-back {
+    background-image: radial-gradient(rgba(255,255,255,0.09) 1px, transparent 1.6px);
+    background-size: 42px 42px;
+  }
+
+  .layer-mid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 58vmin; height: 58vmin;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .ring2 {
+    width: 84vmin; height: 84vmin;
+    border-color: rgba(255,255,255,0.07);
+  }
+  .art {
+    position: relative;
+    text-align: center;
+  }
+  .art h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(4rem, 16vw, 13rem);
+    letter-spacing: 0.01em;
+    line-height: 0.88;
+    background: linear-gradient(135deg, #ffffff, #8a8a8a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .art p {
+    margin-top: 1.1rem;
+    font-size: clamp(0.72rem, 1.3vw, 1rem);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .layer-front { pointer-events: none; }
+  .particle {
+    position: absolute;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.15;
+    animation: twinkle 5s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.6); }
+  }
+
+  /* ---- Spotlight mask: a huge dark plane with a soft transparent hole ---- */
+  .spotlight-follow {
+    position: fixed;
+    top: 50%; left: 50%;
+    width: 240vmax; height: 240vmax;
+    margin-left: -120vmax;
+    margin-top: -120vmax;
+    z-index: 50;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .spotlight-pulse {
+    width: 100%; height: 100%;
+    transform-origin: center;
+    animation: breathe 4.5s ease-in-out infinite;
+    background: radial-gradient(
+      circle at center,
+      transparent 0,
+      transparent 150px,
+      rgba(0,0,0,0.55) 300px,
+      #020202 480px
+    );
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .cursor-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 6px; height: 6px;
+    margin: -3px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+      0 0 12px 4px rgba(255,255,255,0.85),
+      0 0 60px 18px rgba(255,255,255,0.18);
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 2.8rem; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    z-index: 60;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+  }
+  .hint.hidden { opacity: 0; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <div class="parallax layer-back" id="layerBack"></div>
+
+  <div class="parallax layer-mid" id="layerMid">
+    <div class="ring"></div>
+    <div class="ring ring2"></div>
+    <div class="art">
+      <h1>RUDRA</h1>
+      <p>Full&#8209;Stack&nbsp;Developer</p>
+    </div>
+  </div>
+
+  <div class="parallax layer-front" id="layerFront"></div>
+
+  <div class="spotlight-follow" id="spotlightFollow">
+    <div class="spotlight-pulse"></div>
+    <div class="cursor-dot"></div>
+  </div>
+
+  <div class="hint" id="hint">move your cursor to reveal</div>
+</div>
+
+<script>
+  const spotlightFollow = document.getElementById('spotlightFollow');
+  const layerBack  = document.getElementById('layerBack');
+  const layerMid   = document.getElementById('layerMid');
+  const layerFront = document.getElementById('layerFront');
+  const hint       = document.getElementById('hint');
+
+  /* Scatter foreground particles */
+  const PARTICLE_COUNT = 48;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 1.5 + Math.random() * 2.5;
+    p.style.width = p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = Math.random() * 100 + '%';
+    p.style.animationDelay = (Math.random() * 6).toFixed(2) + 's';
+    p.style.animationDuration = (3 + Math.random() * 4).toFixed(2) + 's';
+    layerFront.appendChild(p);
+  }
+
+  /* Spring-based cursor follow: gives the spotlight weight & inertia
+     instead of snapping straight to the pointer. */
+  let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  let pos   = { x: mouse.x, y: mouse.y };
+  let vel   = { x: 0, y: 0 };
+  let lastMove = performance.now();
+  let hasMoved = false;
+
+  const STIFFNESS = 0.085;
+  const DAMPING = 0.80;
+
+  function registerMove(x, y) {
+    mouse.x = x;
+    mouse.y = y;
+    lastMove = performance.now();
+    if (!hasMoved) {
+      hasMoved = true;
+      hint.classList.add('hidden');
+    }
+  }
+
+  window.addEventListener('pointermove', e => registerMove(e.clientX, e.clientY));
+  window.addEventListener('touchstart', e => {
+    if (e.touches[0]) registerMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener('touchmove', e => {
+    if (e.touches[0]) registerMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  /* When idle, let the spotlight drift on a slow lissajous path
+     so the scene keeps breathing instead of freezing in place. */
+  function idleTarget(now) {
+    const idleFor = (now - lastMove) / 1000;
+    if (idleFor < 1.4) return mouse;
+    const drift = Math.min((idleFor - 1.4) / 3, 1);
+    const angle = now * 0.00025;
+    const radius = 26 * drift;
+    return {
+      x: mouse.x + Math.cos(angle) * radius,
+      y: mouse.y + Math.sin(angle * 1.3) * radius * 0.7
+    };
+  }
+
+  function frame(now) {
+    const target = idleTarget(now);
+    const ax = (target.x - pos.x) * STIFFNESS;
+    const ay = (target.y - pos.y) * STIFFNESS;
+    vel.x = (vel.x + ax) * DAMPING;
+    vel.y = (vel.y + ay) * DAMPING;
+    pos.x += vel.x;
+    pos.y += vel.y;
+
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const offX = pos.x - cx;
+    const offY = pos.y - cy;
+
+    spotlightFollow.style.transform = `translate(${offX}px, ${offY}px)`;
+
+    const nx = offX / cx; // -1..1
+    const ny = offY / cy;
+
+    layerBack.style.transform  = `translate3d(${nx * 10}px, ${ny * 10}px, 0)`;
+    layerMid.style.transform   = `translate3d(${nx * 26}px, ${ny * 26}px, 0) rotateX(${-ny * 3}deg) rotateY(${nx * 3}deg)`;
+    layerFront.style.transform = `translate3d(${nx * 48}px, ${ny * 48}px, 0)`;
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

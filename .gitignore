@@ -1,0 +1,10 @@
+# Local dev server logs
+server.log
+*.log
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
