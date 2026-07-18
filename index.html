@@ -131,6 +131,10 @@
   .hover-lift:hover { transform: translateY(-6px); border-color: var(--border-strong); background: var(--card-hover); }
 
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s cubic-bezier(0.2,0.7,0.2,1), transform 0.8s cubic-bezier(0.2,0.7,0.2,1); }
+  /* Parallax uses the standalone `translate` property so it never fights
+     with elements that already animate `transform` (reveal, hover-lift,
+     centering, entrance keyframes) — both apply independently. */
+  [data-parallax] { will-change: translate; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
   .edit-hint {
@@ -352,6 +356,52 @@
     padding: 1.8rem 2rem; border-left: 2px solid var(--border-strong);
   }
 
+  /* ============ SKILLS (river) ============ */
+  #skills { overflow: hidden; position: relative; background: var(--bg); padding: 8rem 0; }
+  /* Scale is only ever set by JS (scroll-driven zoom); left unset here so
+     elements stay at their natural size if that JS never runs (reduced
+     motion / mobile), instead of being stuck mid-zoom. */
+  [data-zoom] { transition: scale 0.15s ease-out; }
+  .skills-wave {
+    position: absolute; left: 0; width: 100%; line-height: 0; z-index: 1; pointer-events: none;
+  }
+  .skills-wave.top { top: -1px; }
+  .skills-wave.bottom { bottom: -1px; transform: scaleY(-1); }
+  .skills-wave svg { width: 100%; height: 70px; display: block; }
+
+  .skills-river-wrap { position: relative; max-width: 640px; margin: 2rem auto 0; }
+  .skills-river-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: visible; }
+  .skills-river-path {
+    fill: none; stroke: url(#riverGradient); stroke-width: 2.5; stroke-linecap: round;
+    stroke-dasharray: 10 9;
+    animation: riverFlow 3.4s linear infinite;
+    opacity: 0.75;
+  }
+  @keyframes riverFlow { to { stroke-dashoffset: -190; } }
+
+  .skill-node-list { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 3.2rem; padding: 1rem 0 2rem; }
+  .skill-node {
+    display: flex; align-items: center; gap: 1.1rem;
+    width: min(300px, 66%);
+    transition: scale 0.2s ease;
+  }
+  .skill-node:nth-child(odd) { align-self: flex-start; }
+  .skill-node:nth-child(even) { align-self: flex-end; flex-direction: row-reverse; text-align: right; }
+  .skill-node-dot {
+    width: 58px; height: 58px; border-radius: 50%; flex-shrink: 0;
+    background: var(--card, rgba(255,255,255,0.045));
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; color: var(--text-off);
+    box-shadow: 0 0 0 6px rgba(0,0,0,0.15), 0 14px 30px rgba(0,0,0,0.4);
+  }
+  .skill-node-label {
+    font-family: 'Anton', sans-serif; font-weight: 400; letter-spacing: 0.02em;
+    text-transform: uppercase; font-size: 1.05rem; color: var(--text);
+  }
+  .skill-node-sub { display: block; font-family: 'Inter', sans-serif; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.15rem; }
+
   /* ============ PROJECTS ============ */
   .projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.4rem; }
   .project-card { padding: 2rem 1.7rem; display: flex; flex-direction: column; gap: 1rem; height: 100%; }
@@ -416,6 +466,8 @@
     .nav-cta { display: none; }
     .nav-toggle { display: flex; }
     .projects-grid { grid-template-columns: 1fr; }
+    .skill-node { width: min(300px, 84%); }
+    .skill-node:nth-child(even) { flex-direction: row; text-align: left; }
   }
 </style>
 </head>
@@ -439,6 +491,14 @@
   <symbol id="i-atom" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.7"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(120 12 12)"/></symbol>
   <symbol id="i-github" viewBox="0 0 24 24"><path stroke-width="1.5" d="M12 2C6.5 2 2 6.6 2 12.2c0 4.5 2.9 8.3 6.8 9.6.5.1.7-.2.7-.5v-1.9c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.5-1.4.1-2.9 0 0 .8-.3 2.7 1a9 9 0 015 0c1.9-1.3 2.7-1 2.7-1 .6 1.5.2 2.6.1 2.9.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 3.9-1.3 6.8-5.1 6.8-9.6C22 6.6 17.5 2 12 2z"/></symbol>
   <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></symbol>
+  <symbol id="i-brackets" viewBox="0 0 24 24"><path d="M8 7L3 12l5 5M16 7l5 5-5 5"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 4c-2 0-3 1-3 3v3c0 1-1 2-2 2 1 0 2 1 2 2v3c0 2 1 3 3 3"/><path d="M16 4c2 0 3 1 3 3v3c0 1 1 2 2 2-1 0-2 1-2 2v3c0 2-1 3-3 3"/></symbol>
+  <symbol id="i-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/></symbol>
+  <symbol id="i-hex" viewBox="0 0 24 24"><path d="M12 2l8 4.6v10.8L12 22l-8-4.6V6.6L12 2z"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9l3 3-3 3"/><path d="M12 15h5"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.8"/><circle cx="6" cy="18" r="1.8"/><circle cx="17" cy="12" r="1.8"/><path d="M6 7.8V16.2"/><path d="M7.6 6.8C11 7.4 14 9 15.5 10.8"/></symbol>
+  <symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 3c4 3 6 7 6 11a6 6 0 01-12 0c0-4 2-8 6-11z"/></symbol>
 </svg>
 
 <!-- ============ NAV ============ -->
@@ -448,6 +508,7 @@
     <span class="nav-highlight" id="navHighlight"></span>
     <a href="#home" class="active">Home</a>
     <a href="#about">About</a>
+    <a href="#skills">Skills</a>
     <a href="#projects">Projects</a>
     <a href="#contact">Contact</a>
   </nav>
@@ -461,6 +522,7 @@
 <div class="nav-mobile-panel" id="navMobilePanel">
   <a href="#home">Home</a>
   <a href="#about">About</a>
+  <a href="#skills">Skills</a>
   <a href="#projects">Projects</a>
   <a href="#contact">Contact</a>
   <a href="#contact" class="btn btn-solid">Let's talk</a>
@@ -470,23 +532,23 @@
 
   <!-- ============ HERO ============ -->
   <section id="home" class="hero">
-    <div class="hero-noise" aria-hidden="true"></div>
+    <div class="hero-noise" aria-hidden="true" data-parallax="0.04"></div>
 
-    <div class="hero-mask-stage-wrap">
+    <div class="hero-mask-stage-wrap" data-parallax="0.06">
       <div class="hero-mask-stage" id="maskStage">
         <img class="mask-base-img" id="maskBaseImg" src="images/photo-base.png" alt="Rudra" draggable="false"/>
         <img class="mask-top-img" id="maskTopImg" src="images/photo-reveal.png" alt="AI-generated portrait" draggable="false"/>
       </div>
     </div>
 
-    <div class="hero-name-lockup">
+    <div class="hero-name-lockup" data-parallax="0.13">
       <div class="hero-line hero-imtag"><span>I'm</span></div>
       <h1 class="hero-line hero-name"><span>RUDRA</span></h1>
       <div class="hero-line hero-role"><span>Web Developer · Embedded Systems</span></div>
     </div>
 
-    <p class="corner-copy corner-left" contenteditable="true">I build with curiosity first — turning rough ideas into working software, line by line, commit by commit.</p>
-    <p class="corner-copy corner-right" contenteditable="true">I lean on AI tools to move faster — prototyping, debugging, and shipping without losing the craft in the details.</p>
+    <p class="corner-copy corner-left" contenteditable="true" data-parallax="0.07">I build with curiosity first — turning rough ideas into working software, line by line, commit by commit.</p>
+    <p class="corner-copy corner-right" contenteditable="true" data-parallax="0.07">I lean on AI tools to move faster — prototyping, debugging, and shipping without losing the craft in the details.</p>
 
     <div class="hero-scroll"><div class="scroll-line"></div>scroll</div>
   </section>
@@ -494,9 +556,9 @@
   <!-- ============ ABOUT ============ -->
   <section id="about">
     <div class="container about-grid">
-      <div class="reveal">
+      <div class="reveal" data-parallax="0.05">
         <div class="eyebrow">About</div>
-        <h2 class="section-title">Who I Am</h2>
+        <h2 class="section-title" data-zoom>Who I Am</h2>
         <div class="about-text">
           <p>I'm Rudra — a web developer with a soft spot for embedded systems. I like building things that respond: interfaces that feel alive, and circuits that react to the real world.</p>
           <p>Somewhere between a browser tab and a breadboard is where I do my best work — clean code on one side, real hardware on the other.</p>
@@ -507,18 +569,89 @@
           <div class="about-stat"><span class="num">2</span><span class="lbl">Disciplines</span></div>
         </div>
       </div>
-      <div class="reveal">
+      <div class="reveal" data-parallax="0.1">
         <p class="about-quote">"Good software feels invisible — it just works, and gets out of your way."</p>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ SKILLS (flows like a river) ============ -->
+  <section id="skills">
+    <div class="skills-wave top" aria-hidden="true">
+      <svg viewBox="0 0 1440 100" preserveAspectRatio="none"><path d="M0,40 C240,90 480,0 720,40 C960,80 1200,10 1440,50 L1440,100 L0,100 Z" fill="var(--bg-edge)"/></svg>
+    </div>
+
+    <div class="container">
+      <div class="reveal" style="text-align:center;" data-parallax="0.05">
+        <div class="eyebrow" style="justify-content:center;">Skills</div>
+        <h2 class="section-title" data-zoom>The Current I Build With</h2>
+        <p class="section-sub" style="margin:0 auto;">Everything here feeds into everything else — one continuous stream from idea to shipped product.</p>
+      </div>
+
+      <div class="skills-river-wrap">
+        <svg class="skills-river-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="riverGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--bg-glow)"/>
+              <stop offset="50%" stop-color="#e0a94a"/>
+              <stop offset="100%" stop-color="var(--bg-glow)"/>
+            </linearGradient>
+          </defs>
+          <path class="skills-river-path" d="M50,0 C15,6 15,12 50,16 C85,20 85,26 50,30 C15,34 15,40 50,44 C85,48 85,54 50,58 C15,62 15,68 50,72 C85,76 85,82 50,86 C15,90 15,96 50,100"/>
+        </svg>
+
+        <div class="skill-node-list">
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-brackets"/></svg></div>
+            <div><span class="skill-node-label">HTML</span><span class="skill-node-sub">Markup</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-layers"/></svg></div>
+            <div><span class="skill-node-label">CSS</span><span class="skill-node-sub">Styling</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-braces"/></svg></div>
+            <div><span class="skill-node-label">JavaScript</span><span class="skill-node-sub">Interaction</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-orbit"/></svg></div>
+            <div><span class="skill-node-label">React</span><span class="skill-node-sub">Interfaces</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-hex"/></svg></div>
+            <div><span class="skill-node-label">Node.js</span><span class="skill-node-sub">Backend</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-terminal"/></svg></div>
+            <div><span class="skill-node-label">Python</span><span class="skill-node-sub">Scripting &amp; AI</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-chip"/></svg></div>
+            <div><span class="skill-node-label">C++ / Embedded</span><span class="skill-node-sub">Hardware</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-spark"/></svg></div>
+            <div><span class="skill-node-label">AI Tools</span><span class="skill-node-sub">Build Faster</span></div>
+          </div>
+          <div class="skill-node reveal" data-zoom>
+            <div class="skill-node-dot"><svg class="icon"><use href="#i-branch"/></svg></div>
+            <div><span class="skill-node-label">Git</span><span class="skill-node-sub">Version Control</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="skills-wave bottom" aria-hidden="true">
+      <svg viewBox="0 0 1440 100" preserveAspectRatio="none"><path d="M0,40 C240,90 480,0 720,40 C960,80 1200,10 1440,50 L1440,100 L0,100 Z" fill="var(--bg-edge)"/></svg>
     </div>
   </section>
 
   <!-- ============ PROJECTS ============ -->
   <section id="projects">
     <div class="container">
-      <div class="reveal">
+      <div class="reveal" data-parallax="0.05">
         <div class="eyebrow">Projects</div>
-        <h2 class="section-title">Selected Work</h2>
+        <h2 class="section-title" data-zoom>Selected Work</h2>
         <p class="section-sub">A few products where AI, accessibility, and everyday utility come together.</p>
       </div>
       <span class="edit-hint reveal">Click any project text below to edit it</span>
@@ -589,9 +722,9 @@
 
   <!-- ============ CONTACT ============ -->
   <section id="contact">
-    <div class="container contact-inner reveal">
+    <div class="container contact-inner reveal" data-parallax="0.06">
       <div class="eyebrow">Contact</div>
-      <h2 class="section-title">Let's Build Something</h2>
+      <h2 class="section-title" data-zoom>Let's Build Something</h2>
       <p>Have a project in mind, or just want to talk shop? My inbox is open.</p>
       <div class="contact-actions">
         <a href="mailto:rudra@email.com" class="btn btn-solid">rudra@email.com</a>
@@ -767,6 +900,55 @@
     });
   }, { threshold: 0.14 });
   revealEls.forEach(function (el) { io.observe(el); });
+
+  /* ---------- Scroll parallax + zoom ("flowing river" motion) ----------
+     Both effects are recomputed from each element's CURRENT position
+     relative to the viewport center every frame (not accumulated scrollY),
+     so they're naturally bounded — no runaway drift on a long page.
+       - data-parallax="<speed>": drifts via the standalone `translate`
+         property, so it composes with whatever `transform` the element
+         already has (centering, hover-lift, reveal, entrance animation).
+       - data-zoom: scales up toward 1 as the element nears viewport
+         center and eases back down as it leaves — the "zooming in and
+         out" as you scroll past each piece of content — via the
+         standalone `scale` property, same non-conflicting approach. */
+  var allowScrollFx = !reduceMotion && window.matchMedia('(min-width: 861px)').matches;
+  if (allowScrollFx) {
+    var parallaxEls = Array.prototype.slice.call(document.querySelectorAll('[data-parallax]'));
+    var zoomEls = Array.prototype.slice.call(document.querySelectorAll('[data-zoom]'));
+    var scrollFxTicking = false;
+
+    function updateScrollFx() {
+      var vh = window.innerHeight;
+      var viewportCenter = vh / 2;
+
+      parallaxEls.forEach(function (el) {
+        var speed = parseFloat(el.dataset.parallax) || 0;
+        var rect = el.getBoundingClientRect();
+        var elCenter = rect.top + rect.height / 2;
+        var offset = (viewportCenter - elCenter) * speed;
+        el.style.translate = '0 ' + offset.toFixed(2) + 'px';
+      });
+
+      var maxDist = vh * 0.55;
+      zoomEls.forEach(function (el) {
+        var rect = el.getBoundingClientRect();
+        var elCenter = rect.top + rect.height / 2;
+        var proximity = Math.max(0, 1 - Math.abs(elCenter - viewportCenter) / maxDist);
+        el.style.scale = (0.86 + proximity * 0.14).toFixed(3);
+      });
+
+      scrollFxTicking = false;
+    }
+    function requestScrollFxUpdate() {
+      if (scrollFxTicking) return;
+      scrollFxTicking = true;
+      requestAnimationFrame(updateScrollFx);
+    }
+    window.addEventListener('scroll', requestScrollFxUpdate, { passive: true });
+    window.addEventListener('resize', requestScrollFxUpdate);
+    updateScrollFx();
+  }
 })();
 </script>
 </body>
